@@ -1,0 +1,57 @@
+version: "3.8"
+services:
+  backend:
+    build: 
+      context: ./backend
+    container_name: express-backend
+    ports:
+      - "3000:3000"   # Mapea el puerto 3000 del contenedor al puerto 3000 de tu máquina local
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/mydatabase  # URL de MongoDB
+      - DB_HOST=postgres  # Nombre del contenedor de PostgreSQL
+      - DB_PORT=5432  # Puerto por defecto de PostgreSQL
+      - DB_USER=user  # Usuario de la base de datos
+      - DB_PASSWORD=password  # Contraseña de la base de datos
+      - DB_NAME=mydatabase  # Nombre de la base de datos
+    depends_on:
+      - mongo   # Esto asegura que MongoDB esté corriendo antes de iniciar el backend
+      - postgres  # Asegura que PostgreSQL esté corriendo antes de iniciar el backend
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: react-frontend
+    ports:
+      - "3001:3000"  # El puerto 3000 dentro del contenedor se mapea a 3001 en la máquina local
+    depends_on:
+      - backend  # Espera a que el backend esté listo
+    environment:
+      - REACT_APP_API_URL=http://backend:3000 # URL del backend para React
+    stdin_open: true  # Esto es opcional y puede ser útil para desarrollo
+    tty: true
+    volumes:
+      - ./frontend:/app    
+  
+  mongo:
+    image: mongo:latest
+    container_name: mongo-db
+    ports:
+      - "27017:27017"  # Exponer el puerto de MongoDB
+    volumes:
+      - mongo-data:/data/db  # Persistir datos de MongoDB
+
+  postgres:
+    image: postgres:latest  # Última versión oficial de PostgreSQL
+    container_name: postgres-db
+    environment:
+      - POSTGRES_USER=user  # Usuario de la base de datos
+      - POSTGRES_PASSWORD=password  # Contraseña de la base de datos
+      - POSTGRES_DB=mydatabase  # Nombre de la base de datos
+    ports:
+      - "5432:5432"  # Exponer el puerto de PostgreSQL
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Persistir datos de PostgreSQL
+
+volumes:
+  mongo-data:
+  postgres_data:
